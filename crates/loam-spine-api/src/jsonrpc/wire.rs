@@ -5,6 +5,13 @@
 //! These types define the protocol-level structures for JSON-RPC 2.0
 //! communication. They are transport-agnostic and used by both TCP
 //! and UDS server implementations.
+//!
+//! `JsonRpcError` and `JsonRpcResponse` are the canonical types from
+//! `cellmembrane-types`. `JsonRpcRequest` is kept local because its
+//! non-optional `params`/`id` fields (with `#[serde(default)]`) are
+//! deeply embedded throughout the dispatch and test code — the canonical
+//! type uses `Option<Value>` which would require 50+ call-site changes
+//! for no wire-level benefit.
 
 use serde::{Deserialize, Serialize};
 
@@ -15,7 +22,11 @@ pub(crate) const METHOD_NOT_FOUND: i32 = -32601;
 pub(crate) const INVALID_PARAMS: i32 = -32602;
 pub(crate) const LOAMSPINE_ERROR: i32 = -32000;
 
-/// A JSON-RPC 2.0 request.
+/// A JSON-RPC 2.0 request — kept local.
+///
+/// Uses non-optional `params`/`id` with `#[serde(default)]` (defaulting to
+/// `Value::Null`). The canonical type wraps these in `Option`, which would
+/// require unwrapping at every dispatch call site.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JsonRpcRequest {
     /// Protocol version (must be "2.0").
@@ -30,53 +41,8 @@ pub struct JsonRpcRequest {
     pub id: serde_json::Value,
 }
 
-/// A JSON-RPC 2.0 response.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct JsonRpcResponse {
-    /// Protocol version (always `"2.0"`; `Cow` avoids allocation).
-    pub jsonrpc: std::borrow::Cow<'static, str>,
-    /// Successful result (mutually exclusive with `error`).
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub result: Option<serde_json::Value>,
-    /// Error (mutually exclusive with `result`).
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<JsonRpcError>,
-    /// Request ID (echoed from the request).
-    pub id: serde_json::Value,
-}
+/// A JSON-RPC 2.0 response — canonical type from cellmembrane-types.
+pub use cellmembrane_types::JsonRpcResponse;
 
-/// A JSON-RPC 2.0 error.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct JsonRpcError {
-    /// Error code.
-    pub code: i32,
-    /// Error message.
-    pub message: String,
-    /// Additional data.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub data: Option<serde_json::Value>,
-}
-
-impl JsonRpcResponse {
-    pub(crate) const fn success(id: serde_json::Value, result: serde_json::Value) -> Self {
-        Self {
-            jsonrpc: std::borrow::Cow::Borrowed("2.0"),
-            result: Some(result),
-            error: None,
-            id,
-        }
-    }
-
-    pub(crate) fn error(id: serde_json::Value, code: i32, message: impl Into<String>) -> Self {
-        Self {
-            jsonrpc: std::borrow::Cow::Borrowed("2.0"),
-            result: None,
-            error: Some(JsonRpcError {
-                code,
-                message: message.into(),
-                data: None,
-            }),
-            id,
-        }
-    }
-}
+/// A JSON-RPC 2.0 error — canonical type from cellmembrane-types.
+pub use cellmembrane_types::JsonRpcError;

@@ -9,6 +9,7 @@ repository.workspace = true
 authors.workspace = true
 
 [dependencies]
+cellmembrane-types = { workspace = true }
 loam-spine-core = { workspace = true }
 tarpc = { workspace = true }
 tokio = { workspace = true }
