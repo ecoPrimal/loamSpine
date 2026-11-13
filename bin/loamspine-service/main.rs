@@ -104,6 +104,9 @@ enum Command {
 
     /// Show socket path for `NeuralAPI` IPC (`UniBin` standard).
     Socket,
+
+    /// Run health diagnostics and system checks (`ecoBin` standard).
+    Doctor,
 }
 
 #[tokio::main]
@@ -141,6 +144,30 @@ async fn main() -> anyhow::Result<()> {
                 "{}",
                 loam_spine_core::neural_api::resolve_socket_path().display()
             )?;
+        }
+        Command::Doctor => {
+            println!("🏥 LoamSpine Health Diagnostics");
+            println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            println!();
+            println!("📦 Binary Information");
+            println!("   Name: loamspine");
+            println!("   Version: {}", env!("CARGO_PKG_VERSION"));
+            println!("   Role: Permanence layer — selective memory & certificates");
+            println!();
+            println!("🔌 IPC Configuration");
+            println!(
+                "   Socket path: {}",
+                loam_spine_core::neural_api::resolve_socket_path().display()
+            );
+            println!();
+            println!("📋 Capabilities");
+            println!(
+                "{}",
+                loam_spine_core::neural_api::capability_list_pretty()
+            );
+            println!();
+            println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            println!("✅ Health check complete!");
         }
     }
 
